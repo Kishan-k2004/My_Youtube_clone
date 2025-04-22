@@ -7,11 +7,11 @@ import {ApiResponse} from '../utils/ApiResponse.js'
 const generateAccessAndRefreshTokens = async(userId)=>{
     try {
         const User = await user.findById(userId)
-        const accessToken = user.generateAccessToken()
-        const refreshToken = user.generateRefreshToken()
+        const accessToken = User.generateAccessToken()
+        const refreshToken = User.generateRefreshToken()
 
         User.refreshToken = refreshToken
-        await user.save({validateBeforeSave : false})
+        await User.save({validateBeforeSave : false})
 
         return {accessToken,refreshToken}
 
@@ -87,7 +87,7 @@ const loginUser = asyncHandler(async(req,res) => {
        throw new ApiError(400,"email is required")
     }
 
-    const User = await user.findOne(email)
+    const User = await user.findOne({email})
 
     if(!User){
         throw new ApiError(404,"User not found")
@@ -101,7 +101,7 @@ const loginUser = asyncHandler(async(req,res) => {
 
     const {accessToken,refreshToken} = await generateAccessAndRefreshTokens(User._id)
 
-    const loggedInUser = await User.findOne(User._id)
+    const loggedInUser = await user.findById(User._id)
     .select("-password -refreshToken")
 
 
@@ -118,8 +118,9 @@ const loginUser = asyncHandler(async(req,res) => {
 })
 
 const logoutUser = asyncHandler(async(req,res) => {
+    
     await user.findByIdAndUpdate(
-        req.user._id,
+        req.User._id,
         {
             $set : {
                 refreshToken : undefined
